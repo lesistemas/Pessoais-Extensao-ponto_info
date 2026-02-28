@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "Ahgora Ponto – Lembrete",
+  "version": "1.1.2",
+  "description": "Lembretes para registrar ponto no Ahgora (abre a página, destaca o botão e verifica se apareceu um novo registro).",
+  "action": {
+    "default_title": "Ahgora Ponto – Lembrete",
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "alarms",
+    "notifications",
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.ahgora.com.br/novabatidaonline/*"
+  ],
+  "background": {
+    "service_worker": "service_worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.ahgora.com.br/novabatidaonline/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  }
+}

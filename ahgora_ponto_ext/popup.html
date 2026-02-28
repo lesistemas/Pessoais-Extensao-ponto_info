@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ahgora Ponto – Lembrete</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <div class="title">
+      <div class="dot"></div>
+      <div>
+        <h1>Ahgora Ponto</h1>
+        <p class="subtitle">Lembrete + abrir página + checagem de registro</p>
+      </div>
+    </div>
+    <label class="switch">
+      <input id="enabled" type="checkbox" />
+      <span class="slider"></span>
+    </label>
+  </header>
+
+  <section>
+    <h2>Horários</h2>
+    <div id="times" class="times"></div>
+    <div class="row">
+      <button id="addTime" class="btn">+ Adicionar horário</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Dias da semana</h2>
+    <div class="days" id="days"></div>
+    <div class="row gap">
+      <button id="weekdays" class="btn small">Dias úteis</button>
+      <button id="alldays" class="btn small">Todos</button>
+      <button id="cleardays" class="btn small danger">Limpar</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Janela de aviso</h2>
+    <div class="grid2">
+      <label class="field">
+        <span>Tolerância (min)</span>
+        <input id="toleranceMin" type="number" min="0" max="10" step="1" />
+      </label>
+      <label class="field">
+        <span>Verificar registro após (min)</span>
+        <input id="verifyAfterMin" type="number" min="1" max="30" step="1" />
+      </label>
+    </div>
+    <p class="hint">
+      A notificação acontecerá uma vez dentro da janela de tolerância (ex.: 3 min) e depois a extensão tenta verificar se surgiu um novo “Registro realizado”.
+    </p>
+  </section>
+
+
+  <section>
+    <h2>Login (opcional)</h2>
+    <div class="grid2">
+      <label class="field">
+        <span>Matrícula</span>
+        <input id="matricula" type="text" placeholder="Ex: 2149" autocomplete="off" />
+      </label>
+      <label class="field">
+        <span>Senha</span>
+        <input id="senha" type="password" placeholder="Sua senha" autocomplete="off" />
+      </label>
+    </div>
+    <label class="checkRow">
+      <input id="autoLogin" type="checkbox" />
+      <span>Preencher e clicar em <b>Avançar</b> automaticamente quando abrir o Ahgora</span>
+    </label>
+    <p class="hint">
+      Atenção: esses dados ficam salvos no armazenamento da extensão no Chrome. Use somente se for ok pra você.
+    </p>
+  </section>
+
+  <section>
+    <h2>Ações</h2>
+    <div class="row gap">
+      <button id="openNow" class="btn">Abrir Ahgora</button>
+      <button id="testNotif" class="btn">Testar alerta</button>
+    </div>
+  </section>
+
+  <footer>
+    <button id="save" class="btn primary">Salvar e agendar</button>
+    <p id="status" class="status"></p>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
