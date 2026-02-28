@@ -111,7 +111,6 @@ async function waitForRegistrarPontoAndClick(timeoutMs = 12000){
       btn.scrollIntoView({ behavior:'smooth', block:'center', inline:'center' });
       await sleep(150);
       btn.classList.add('ahgora-ponto-highlight');
-      alert("clique");
       try{ btn.click(); }catch{}
       setTimeout(()=> btn.classList.remove('ahgora-ponto-highlight'), 8000);
       return { ok:true };
@@ -278,43 +277,83 @@ async function waitForRegistreButton(timeoutMs = 20000){
   return false;
 }
 
+function hasLoginInputs(){
+  return !!(document.querySelector('#outlined-basic-account') && document.querySelector('#outlined-basic-password'));
+}
+
+async function waitForLoginOrRegistre(timeoutMs = 25000){
+  const start = Date.now();
+  while(Date.now() - start < timeoutMs){
+    if(findRegistreButton()) return { ok:true, state:'registre' };
+    if(hasLoginInputs()) return { ok:true, state:'login' };
+    await sleep(300);
+  }
+  return { ok:false, reason:'no_login_or_registre' };
+}
+
 async function autoLoginAndRegister({ matricula, senha }){
   ensureHighlightStyle();
 
-  // Se já estiver logado, o botão de registrar pode existir direto
-  if(findRegistreButton()){
+  const state = await waitForLoginOrRegistre(25000);
+  if(!state.ok){
+    showToast('Esperei a tela carregar, mas não encontrei login nem o botão "Registre seu ponto".');
+    return state;
+  }
+
+  // Fluxo direto: já está logado e o botão apareceu
+  if(state.state === 'registre'){
     return await highlightAndClickRegistre({ matricula, senha });
   }
 
-  // Preenche login
+  // Fluxo com login
   const filled = fillLogin(matricula, senha);
   if(!filled.ok){
     showToast('Não achei os campos de Matrícula/Senha nessa tela.');
     return filled;
   }
 
-  // Clica em Avançar
   const avancar = findAvancarButton();
   if(!avancar){
-    showToast('Não encontrei o botão "Avançar".');
+    showToast('Preenchi login, mas não encontrei o botão "Avançar".');
     return { ok:false, reason:'avancar_not_found' };
   }
 
   avancar.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
   await sleep(200);
   avancar.classList.add('ahgora-ponto-highlight');
-
   try{ avancar.click(); } catch {}
-  showToast('Preenchi e cliquei em "Avançar"...');
+  showToast('Preenchi login e cliquei em "Avançar"... aguardando botão de registro.');
 
-  // Espera o botão "Registre seu ponto" aparecer
   const ok = await waitForRegistreButton(25000);
   if(!ok){
-    showToast('Entrei, mas não apareceu "Registre seu ponto" (talvez login falhou ou a página mudou).');
+    showToast('Após o login, não apareceu "Registre seu ponto".');
     return { ok:false, reason:'registre_timeout' };
   }
 
   return await highlightAndClickRegistre({ matricula, senha });
+}
+
+async function smartRegisterFlow(payload = {}){
+  const creds = (payload?.matricula || payload?.senha)
+    ? { matricula: payload?.matricula || '', senha: payload?.senha || '' }
+    : await getCredsFromStorage();
+
+  const canAutoLogin = !!((creds?.matricula || '').trim() && (creds?.senha || '').trim());
+  if(canAutoLogin){
+    return await autoLoginAndRegister(creds);
+  }
+
+  // Sem credenciais: ainda espera o botão aparecer para clicar quando já estiver logado.
+  const appeared = await waitForRegistreButton(25000);
+  if(!appeared){
+    if(hasLoginInputs()){
+      showToast('Tela de login detectada. Salve Matrícula/Senha no popup para a extensão avançar automaticamente.');
+      return { ok:false, reason:'missing_creds_for_login' };
+    }
+    showToast('Esperei o botão "Registre seu ponto", mas ele não apareceu.');
+    return { ok:false, reason:'registre_timeout' };
+  }
+  return await highlightAndClickRegistre();
 }
 
 function countRegistros(){
@@ -343,14 +382,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
 
       if (msg?.type === 'AUTO_LOGIN_AND_REGISTER') {
-        const r = await autoLoginAndRegister(msg?.payload || {});
+        const r = await smartRegisterFlow(msg?.payload || {});
         sendResponse(r ?? { ok:false, reason:'no_result' });
         return;
       }
 
       if (msg?.type === 'HIGHLIGHT_BOTAO') {
-        // pode vir sem payload; nesse caso o script tenta pegar as credenciais do storage
-        const r = await highlightAndClickRegistre(msg?.payload);
+        const r = await smartRegisterFlow(msg?.payload || {});
         sendResponse(r ?? { ok:false, reason:'no_result' });
         return;
       }
